@@ -4,6 +4,7 @@
  */
 package jinger.dev;
 
+import jinger.message.Messenger;
 import com.sun.jna.Memory;
 import com.ochafik.lang.jnaerator.runtime.NativeSize;
 import java.awt.image.BufferedImage;
@@ -13,8 +14,6 @@ import com.sun.jna.ptr.PointerByReference;
 import com.sun.jna.Pointer;
 import java.io.IOException;
 import java.io.OutputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import static fprint.FprintLibrary.*;
 
 /**
@@ -23,7 +22,11 @@ import static fprint.FprintLibrary.*;
  */
 public class FprintImpl implements DigitalDevice {
 
-    private Logger logger = LoggerFactory.getLogger(FprintImpl.class);
+    private Messenger messenger;
+
+    public FprintImpl(Messenger messenger) {
+        this.messenger = messenger;
+    }
 
     private fp_dev init() throws InitException {
         if (fp_init() < 0) {
@@ -45,7 +48,7 @@ public class FprintImpl implements DigitalDevice {
             throw new InitException("Could not discover devices");
         }
         fp_driver drv = fp_dscv_dev_get_driver(ddev);
-        logger.info("Driver found: " + fp_driver_get_full_name(drv).getString(0));
+        messenger.message("Driver found: " + fp_driver_get_full_name(drv).getString(0));
         return ddev;
     }
 
@@ -74,7 +77,7 @@ public class FprintImpl implements DigitalDevice {
             dev = init();
             int r = -1;
             enrolledPrint = new PointerByReference();
-            logger.info("You will need to successfully scan your finger "
+            messenger.message("You will need to successfully scan your finger "
                     + fp_dev_get_nr_enroll_stages(dev) + " times to "
                     + "complete the process.");
             do {
@@ -87,26 +90,29 @@ public class FprintImpl implements DigitalDevice {
 
                 switch (r) {
                     case fp_enroll_result.FP_ENROLL_COMPLETE:
-                        logger.info("Enroll complete!");
+                        messenger.message("Enroll complete!");
                         break;
                     case fp_enroll_result.FP_ENROLL_FAIL:
                         throw new OpenException("Enroll failed, something wen't wrong :(");
                     case fp_enroll_result.FP_ENROLL_PASS:
-                        logger.info("Enroll stage passed. Yay!");
+                        messenger.message("Enroll stage passed. Yay!");
                         break;
                     case fp_enroll_result.FP_ENROLL_RETRY:
-                        logger.info("Didn't quite catch that. Please try again.");
+                        messenger.message("Didn't quite catch that. Please try again.");
                         break;
                     case fp_enroll_result.FP_ENROLL_RETRY_TOO_SHORT:
-                        logger.info("Your swipe was too short, please try again.");
+                        messenger.message("Your swipe was too short, please try again.");
                         break;
                     case fp_enroll_result.FP_ENROLL_RETRY_CENTER_FINGER:
-                        logger.info("Didn't catch that, please center your finger on the "
+                        messenger.message("Didn't catch that, please center your finger on the "
                                 + "sensor and try again.");
                         break;
                     case fp_enroll_result.FP_ENROLL_RETRY_REMOVE_FINGER:
-                        logger.info("Scan failed, please remove your finger and then try "
+                        messenger.message("Scan failed, please remove your finger and then try "
                                 + "again.");
+                        break;
+                    default:
+                        messenger.message("Scan failed, unknow input.");
                         break;
                 }
             } while (r != fp_enroll_result.FP_ENROLL_COMPLETE);
@@ -139,7 +145,7 @@ public class FprintImpl implements DigitalDevice {
         try {
             dev = init();
             do {
-                logger.info("Scan your finger now.");
+                messenger.message("Scan your finger now.");
                 PointerByReference img = new PointerByReference();
                 fp_print_data data = new fp_print_data(p);
                 r = fp_verify_finger_img(dev, data, img);
@@ -158,16 +164,16 @@ public class FprintImpl implements DigitalDevice {
                         fp_exit();
                         return true;
                     case fp_verify_result.FP_VERIFY_RETRY:
-                        logger.info("Scan didn't quite work. Please try again.");
+                        messenger.message("Scan didn't quite work. Please try again.");
                         break;
                     case fp_verify_result.FP_VERIFY_RETRY_TOO_SHORT:
-                        logger.info("Swipe was too short, please try again.");
+                        messenger.message("Swipe was too short, please try again.");
                         break;
                     case fp_verify_result.FP_VERIFY_RETRY_CENTER_FINGER:
-                        logger.info("Please center your finger on the sensor and try again.");
+                        messenger.message("Please center your finger on the sensor and try again.");
                         break;
                     case fp_verify_result.FP_VERIFY_RETRY_REMOVE_FINGER:
-                        logger.info("Please remove finger from the sensor and try again.");
+                        messenger.message("Please remove finger from the sensor and try again.");
                         break;
                 }
             } while (true);

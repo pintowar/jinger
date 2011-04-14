@@ -1,13 +1,13 @@
 package jinger;
 
-import jinger.dev.DigitalDevice;
-import jinger.dev.FprintImpl;
+import jinger.device.DigitalDevice;
+import jinger.device.FprintImpl;
 import jinger.message.Messenger;
-import jinger.ui.Enroll;
-import org.apache.pivot.wtk.Alert;
+import jinger.ui.EnrollBackground;
 import org.apache.pivot.wtk.Application;
 import org.apache.pivot.wtk.DesktopApplicationContext;
 import org.apache.pivot.wtk.Display;
+import org.apache.pivot.wtk.Prompt;
 import org.apache.pivot.wtk.Window;
 
 /**
@@ -25,12 +25,12 @@ public class Main implements Application {
 
             @Override
             public void message(String message) {
-                Alert.alert(message, window);
+                Prompt.prompt(message, window);
             }
         });
         window = new Window();
         window.setTitle("Jinger Enroll");
-        Enroll enroll = new Enroll(digitalDevice);
+        EnrollBackground enroll = new EnrollBackground(digitalDevice);
 
         window.setContent(enroll);
         window.open(dspl);

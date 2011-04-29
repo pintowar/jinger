@@ -48,7 +48,7 @@ public class FprintImpl implements DigitalDevice {
             throw new InitException("Could not discover devices");
         }
         fp_driver drv = fp_dscv_dev_get_driver(ddev);
-        messenger.message("Driver found: " + fp_driver_get_full_name(drv).getString(0));
+        //messenger.message("Driver found: " + fp_driver_get_full_name(drv).getString(0));
         return ddev;
     }
 
